@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EnergyPulse AI - UI/UX design board</title>
+<style>
+@font-face { font-family: "Archivo"; src: url("../assets/fonts/Archivo-Variable.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+@page { size: 1600px 900px; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Archivo", "Segoe UI", sans-serif; color: #0b1c2b; background: #cfd8df; font-size: 17px; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 1600px; height: 900px; padding: 46px 56px 40px; background: #eef2f5; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; margin: 0 auto 16px; }
+@media print { body { background: none; } .page { margin: 0; } }
+h1 { font-size: 34px; line-height: 1.15; margin: 0; font-weight: 700; font-stretch: 108%; letter-spacing: -0.015em; }
+h2 { font-size: 19px; margin: 0 0 6px; font-weight: 650; }
+.lead { color: #40586b; margin: 8px 0 0; max-width: 100ch; }
+.head { margin-bottom: 22px; }
+.foot { position: absolute; left: 56px; right: 56px; bottom: 16px; display: flex; justify-content: space-between; font-size: 13px; color: #6a8092; }
+.row { display: flex; gap: 22px; flex: 1; min-height: 0; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+figure { margin: 0; display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.shot { flex: 1; min-height: 0; border-radius: 10px; overflow: hidden; background: #081420; box-shadow: 0 6px 22px rgba(8, 20, 32, 0.22); }
+.shot img { width: 100%; display: block; }
+.row.top { align-items: flex-start; }
+.row.top .shot { flex: none; max-height: 610px; }
+figcaption { font-size: 14.5px; color: #40586b; margin-top: 8px; }
+figcaption b { color: #0b1c2b; }
+.phone { flex: 0 0 auto; width: 232px; }
+.phone .shot { border-radius: 22px; border: 5px solid #0b1c2b; height: 560px; flex: none; }
+.notes { flex: 0 0 380px; }
+ul, ol { margin: 0; padding-left: 20px; }
+li + li { margin-top: 7px; }
+.card { background: #fff; border-radius: 10px; padding: 18px 20px; border: 1px solid #d5dee5; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #d5dee5; }
+th { text-align: left; background: #0b1c2b; color: #f4faff; font-weight: 600; padding: 9px 12px; }
+td { padding: 8px 12px; border-top: 1px solid #e3e9ee; vertical-align: top; }
+td.q { color: #40586b; }
+.flow { display: flex; align-items: stretch; gap: 0; margin: 4px 0 20px; }
+.step { flex: 1; background: #0b1c2b; color: #f4faff; border-radius: 10px; padding: 14px 16px; position: relative; }
+.step + .step { margin-left: 30px; }
+.step + .step::before { content: ""; position: absolute; left: -24px; top: 50%; width: 18px; height: 2px; background: #0b1c2b; }
+.step + .step::after { content: ""; position: absolute; left: -12px; top: calc(50% - 5px); border-left: 8px solid #0b1c2b; border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+.step b { display: block; font-size: 17px; }
+.step span { font-size: 13.5px; color: #a2b5c4; }
+.step i { font-style: normal; color: #54e5c5; font-weight: 700; margin-right: 6px; }
+.sw { display: flex; gap: 12px; flex-wrap: wrap; }
+.sw div { width: 148px; border-radius: 8px; overflow: hidden; border: 1px solid #d5dee5; background: #fff; font-size: 13px; }
+.sw div i { display: block; height: 54px; }
+.sw div span { display: block; padding: 7px 9px; line-height: 1.3; }
+.sw div b { display: block; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid; margin-right: 6px; background: #081420; }
+.cover { background: #081420; color: #f4faff; justify-content: center; }
+.cover h1 { font-size: 64px; }
+.cover h1 span { color: #54e5c5; }
+.cover .lead { color: #a2b5c4; font-size: 21px; }
+.cover table { background: transparent; border-color: #1e3a4f; color: #f4faff; margin-top: 34px; font-size: 17px; max-width: 1100px; }
+.cover th { background: #142b3d; } .cover td { border-color: #1e3a4f; } .cover td.q { color: #a2b5c4; }
+.cover .foot { color: #6f8798; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <h1>Energy<span>Pulse</span> AI</h1>
+  <p class="lead">UI/UX design for Evaluation 2. A clickable prototype built with HTML, CSS and JavaScript (no Streamlit).<br>Every chart, forecast and alert on the screens is real output of the trained model on UCI meter MT_287.</p>
+  <table>
+    <tr><th style="width:44%">Evaluation item</th><th>Where it is shown</th></tr>
+    <tr><td>Complete UI screens covering the main user flow</td><td class="q">Pages 2 to 5: flow, overview, add readings, alerts, alert review, model report, settings</td></tr>
+    <tr><td>Consistent and user-friendly design</td><td class="q">Page 9: colours, type, status wording and component rules used on every screen</td></tr>
+    <tr><td>Responsive design planning</td><td class="q">Page 8: three layouts (desktop, tablet, phone) with screenshots of each</td></tr>
+    <tr><td>Clear input and results presentation</td><td class="q">Pages 3 and 4: file upload with checks; pages 3 and 5: expected against actual, cost, accuracy</td></tr>
+    <tr><td>Planned input validation and error states</td><td class="q">Pages 6 and 7: every rule with its message, plus empty, loading and failure states</td></tr>
+  </table>
+  <div class="foot"><span>Open ui/index.html to click through the prototype. ui/states.html lists every screen and state.</span><span>1</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Main user flow</h1><p class="lead">From a CSV of meter readings to a recorded decision on an unusual reading. The same five verbs as the proposal: upload, predict, detect, explain, review.</p></div>
+  <div class="flow">
+    <div class="step"><b><i>1</i>Add readings</b><span>Choose a CSV; the file is checked before anything is sent</span></div>
+    <div class="step"><b><i>2</i>Overview</b><span>Actual against expected, and the next 24 hours</span></div>
+    <div class="step"><b><i>3</i>Alerts</b><span>Readings outside the normal range, newest first</span></div>
+    <div class="step"><b><i>4</i>Alert review</b><span>What was expected, what happened, what it costs</span></div>
+    <div class="step"><b><i>5</i>Decision</b><span>Mark as expected, or flag to investigate with a note</span></div>
+  </div>
+  <div class="row top">
+    <figure><div class="shot"><img src="../screenshots/desktop/03-add-readings-check.png" alt=""></div><figcaption><b>1</b> Add readings</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/01-overview.png" alt=""></div><figcaption><b>2</b> Overview</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/05-alerts-needs-review.png" alt=""></div><figcaption><b>3</b> Alerts</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/07-alert-review.png" alt=""></div><figcaption><b>4</b> Alert review</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/08-alert-decision-saved.png" alt=""></div><figcaption><b>5</b> Decision saved</figcaption></figure>
+  </div>
+  <p class="lead" style="margin-top:14px">Two supporting screens sit beside the flow: <b>Model report</b> (how accurate the forecast is, in plain numbers) and <b>Settings</b> (tariff and alert sensitivity).</p>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>2</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Overview: results first</h1></div>
+  <div class="row">
+    <figure style="flex:1.9"><div class="shot"><img src="../screenshots/desktop/01-overview.png" alt=""></div></figure>
+    <div class="col notes">
+      <div class="card"><h2>What the screen answers</h2>
+        <ul><li><b>Is today normal?</b> One sentence at the top, with the kWh behind it and a link to the alert that explains it.</li>
+        <li><b>What was expected?</b> Mint line is the forecast, white line is the reading, the band is the normal range for that hour.</li>
+        <li><b>Where is the problem?</b> Hours outside the range get an amber dot and the extra energy is shaded.</li>
+        <li><b>What comes next?</b> The dashed part is the forecast for the next 24 hours.</li></ul></div>
+      <div class="card"><h2>Design decisions</h2>
+        <ul><li>Results are written in the user's units (kWh, money), not model terms.</li>
+        <li>Open alerts are one click away and show their cost.</li>
+        <li>Accuracy is stated next to the forecast, compared with a simple rule, so the user knows how far to trust it.</li></ul></div>
+    </div>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>3</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Add readings: clear input</h1><p class="lead">Three steps. The requirements are visible before the user picks a file, and the file is checked in full before upload.</p></div>
+  <div class="row top">
+    <figure><div class="shot"><img src="../screenshots/desktop/02-add-readings-choose-file.png" alt=""></div><figcaption><b>Choose a file.</b> Drop zone, file rules and a sample file to copy the layout from.</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/03-add-readings-check.png" alt=""></div><figcaption><b>Check and confirm.</b> What was found in the file (rows, period, total), first rows, meter name and tariff.</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/04-add-readings-done.png" alt=""></div><figcaption><b>Done.</b> Confirmation with the next action.</figcaption></figure>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>4</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Alerts and alert review: from detection to decision</h1></div>
+  <div class="row top">
+    <figure><div class="shot"><img src="../screenshots/desktop/06-alerts-all.png" alt=""></div><figcaption><b>Alerts.</b> Filter by status. Each row gives duration, actual of expected, the difference, estimated cost and size.</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/07-alert-review.png" alt=""></div><figcaption><b>Alert review.</b> The chart zooms on the event; facts and the reason sit beside the decision. The wording says it is a deviation to check, not a confirmed fault.</figcaption></figure>
+    <figure><div class="shot"><img src="../screenshots/desktop/09-model-report.png" alt=""></div><figcaption><b>Model report.</b> MAE, RMSE and WAPE against two baselines, results on unseen meters, and how alerts were tested.</figcaption></figure>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>5</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Input validation: every rule and its message</h1><p class="lead">Messages say what is wrong, where (line numbers), and how to fix it. Nothing is uploaded until the file passes. Errors appear next to the field, with an icon and text, and focus moves to the first field to fix.</p></div>
+  <div class="row">
+    <div class="col" style="flex:1.25">
+      <table>
+        <tr><th style="width:27%">Input</th><th style="width:27%">Rule</th><th>Message shown</th></tr>
+        <tr><td>File type</td><td class="q">Must end in .csv</td><td>"meter_readings.xlsx is not a CSV file" and how to save as CSV</td></tr>
+        <tr><td>File size</td><td class="q">Up to 20 MB</td><td>"… is larger than 20 MB" and how to shorten it</td></tr>
+        <tr><td>Columns</td><td class="q">timestamp and kwh</td><td>"Column kwh is missing", with the names found in the file</td></tr>
+        <tr><td>Dates</td><td class="q">2014-06-19 07:00</td><td>"1 date is not readable (line 203)"</td></tr>
+        <tr><td>Readings</td><td class="q">A number, zero or more</td><td>"1 reading is not a number (line 14)", "1 reading is below zero (line 77)"</td></tr>
+        <tr><td>Interval</td><td class="q">15 minutes or 1 hour</td><td>"Readings must be every 15 minutes or every hour"</td></tr>
+        <tr><td>History</td><td class="q">At least 28 days</td><td>"Not enough history … this file covers 20"</td></tr>
+        <tr><td>Gaps</td><td class="q">Up to 5% missing</td><td>Above 5%: error. Below: warning that gaps are filled from the day before</td></tr>
+        <tr><td>Meter name</td><td class="q">Required, up to 40 characters</td><td>"Give the meter a name, for example Main building."</td></tr>
+        <tr><td>Price of one kWh</td><td class="q">A number above 0</td><td>"Enter the price of one kWh as a number greater than 0, for example 0.15."</td></tr>
+        <tr><td>Review note</td><td class="q">Required to flag; up to 280</td><td>"Add a note so the person who follows up knows what to check."</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <figure><div class="shot"><img src="../screenshots/states/upload-file-problems.png" alt=""></div><figcaption><b>File with problems.</b> All problems are listed at once.</figcaption></figure>
+      <figure><div class="shot"><img src="../screenshots/states/upload-form-errors.png" alt=""></div><figcaption><b>Form errors.</b> Shown under the field.</figcaption></figure>
+    </div>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>6</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Empty, loading and failure states</h1><p class="lead">Each state tells the user what is happening and what to do next. A failure never loses what the user already entered.</p></div>
+  <div class="row" style="flex-wrap:wrap">
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/overview-first-run.png" alt=""></div><figcaption><b>First run.</b> No readings yet: two ways to start.</figcaption></figure>
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/overview-loading.png" alt=""></div><figcaption><b>Loading.</b> Placeholders in the shape of the content.</figcaption></figure>
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/overview-load-failed.png" alt=""></div><figcaption><b>Load failed.</b> What happened, and Try again.</figcaption></figure>
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/upload-failed.png" alt=""></div><figcaption><b>Upload failed.</b> File and form are kept; the button becomes Try again.</figcaption></figure>
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/alert-note-required.png" alt="" style="margin-top:-52%"></div><figcaption><b>Note required.</b> Flagging to investigate needs a note.</figcaption></figure>
+    <figure style="flex:1 1 30%"><div class="shot" style="height:292px;flex:none"><img src="../screenshots/states/alerts-none.png" alt=""></div><figcaption><b>No alerts.</b> Explains why, and links to sensitivity.</figcaption></figure>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>7</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>Responsive plan</h1></div>
+  <div class="row">
+    <div class="col" style="flex:0 0 470px">
+      <table>
+        <tr><th style="width:30%">Width</th><th>Layout</th></tr>
+        <tr><td><b>1100 px and up</b><br><span class="q">desktop</span></td><td>Side navigation with labels. Two columns. Alerts in a table.</td></tr>
+        <tr><td><b>760 to 1099 px</b><br><span class="q">tablet</span></td><td>Navigation shrinks to icons. One column. Alerts become cards.</td></tr>
+        <tr><td><b>Below 760 px</b><br><span class="q">phone</span></td><td>Navigation moves to a bottom bar within thumb reach. Forms stack, buttons are full width, the three result figures stack into rows.</td></tr>
+      </table>
+      <div class="card"><h2>Rules that hold at every width</h2>
+        <ul><li>Charts are redrawn at the real width of their container, so text stays readable.</li>
+        <li>Buttons and links are at least 40 px high.</li>
+        <li>No screen scrolls sideways (checked at 390, 820 and 1440 px).</li>
+        <li>Content order does not change: status, chart, alerts, summary.</li></ul></div>
+      <figure><div class="shot"><img src="../screenshots/tablet/02-alerts.png" alt=""></div><figcaption><b>Tablet, 820 px.</b> Icon navigation, alerts as cards.</figcaption></figure>
+    </div>
+    <figure class="phone"><div class="shot"><img src="../screenshots/mobile/01-overview.png" alt=""></div><figcaption><b>Overview</b></figcaption></figure>
+    <figure class="phone"><div class="shot"><img src="../screenshots/mobile/05-alerts.png" alt=""></div><figcaption><b>Alerts</b></figcaption></figure>
+    <figure class="phone"><div class="shot"><img src="../screenshots/mobile/06-alert-review.png" alt=""></div><figcaption><b>Alert review</b></figcaption></figure>
+    <figure class="phone"><div class="shot"><img src="../screenshots/mobile/04-add-readings-problems.png" alt=""></div><figcaption><b>File problems</b></figcaption></figure>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>8</span></div>
+</section>
+
+<section class="page">
+  <div class="head"><h1>One design language on every screen</h1></div>
+  <div class="row">
+    <div class="col">
+      <div class="card"><h2>Colour carries one meaning each</h2>
+        <div class="sw" style="margin-top:10px">
+          <div><i style="background:#081420"></i><span><b>Navy</b>#081420 page</span></div>
+          <div><i style="background:#54e5c5"></i><span><b>Mint</b>#54E5C5 expected, main action</span></div>
+          <div><i style="background:#f4faff"></i><span><b>White</b>#F4FAFF actual reading, text</span></div>
+          <div><i style="background:#ffa568"></i><span><b>Amber</b>#FFA568 outside normal, needs review</span></div>
+          <div><i style="background:#45a9fa"></i><span><b>Sky</b>#45A9FA forecast, below expected</span></div>
+          <div><i style="background:#ff8080"></i><span><b>Red</b>#FF8080 input errors only</span></div>
+        </div>
+        <p class="lead" style="font-size:15px">Taken from the project proposal, so the product and the presentation look like one project. Colour is never the only signal: every status also has a word or an icon.</p></div>
+      <div class="card"><h2>Type</h2><p style="margin:0">One family, Archivo. Wider and heavier for titles and the status sentence, regular for text, figures aligned in columns so numbers can be compared down a table.</p></div>
+    </div>
+    <div class="col">
+      <div class="card"><h2>One word for one thing</h2>
+        <p style="margin:6px 0 12px"><span class="badge" style="color:#ffa568">Needs review</span><span class="badge" style="color:#a2b5c4">Expected</span><span class="badge" style="color:#45a9fa">To investigate</span></p>
+        <ul><li>The button "Mark as expected" produces the status "Expected" and the message "Marked as expected".</li>
+        <li>"Expected" always means the forecast; "normal range" always means the band on the chart.</li>
+        <li>Deviation size is Small, Medium or Large, never a model score.</li></ul></div>
+      <div class="card"><h2>Same parts everywhere</h2>
+        <ul><li>One chart component on the overview and on every alert: same colours, same legend.</li>
+        <li>One primary action per screen (mint). Other actions are outlined.</li>
+        <li>Every decision can be undone from the confirmation message.</li>
+        <li>Keyboard focus is always visible; forms have labels, hints and error text linked to the field.</li></ul></div>
+    </div>
+  </div>
+  <div class="foot"><span>EnergyPulse AI, UI/UX design</span><span>9</span></div>
+</section>
+
+</body>
+</html>

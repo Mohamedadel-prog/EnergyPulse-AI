@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EnergyPulse AI - دليل التيم للتقييم التاني</title>
+<style>
+  body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; max-width: 880px; margin: 0 auto; padding: 28px 22px 60px; line-height: 1.85; color: #10202e; background: #fbfcfd; font-size: 17px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 21px; margin: 38px 0 8px; padding-bottom: 6px; border-bottom: 2px solid #0b8f76; }
+  h3 { font-size: 17.5px; margin: 22px 0 4px; color: #0b6b59; }
+  p { margin: 8px 0; }
+  code, .en { direction: ltr; unicode-bidi: isolate; font-family: Consolas, "Courier New", monospace; font-size: 15px; background: #eaf0f4; padding: 1px 6px; border-radius: 4px; }
+  .en { font-family: inherit; background: none; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15.5px; }
+  th { background: #10202e; color: #fff; padding: 8px 10px; text-align: right; font-weight: 600; }
+  td { padding: 8px 10px; border-bottom: 1px solid #dde5ea; vertical-align: top; }
+  td.n { direction: ltr; text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .q { background: #fff; border: 1px solid #dde5ea; border-right: 4px solid #e08a3c; border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+  .q b { color: #a2530f; }
+  .q p { margin: 4px 0 0; }
+  .warn { background: #fff7ef; border: 1px solid #f0c9a0; border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+  .lead { color: #4b6070; margin-top: 0; }
+  li { margin: 4px 0; }
+  @media print { body { background: #fff; font-size: 14px; } h2 { break-after: avoid; } .q, tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>EnergyPulse AI: دليل التيم للتقييم التاني</h1>
+<p class="lead">الدكتورة هتسأل كل واحد لوحده، فالملف ده مكتوب عشان أي حد في التيم يقدر يشرح أي خطوة. كل الأرقام هنا طالعة من الـ notebook ومن ملفات <code>ml/outputs</code>.</p>
+
+<h2>افتحوا إيه في السكشن</h2>
+<ul>
+  <li><b>الـ ML:</b> <code>ml/notebooks/EnergyPulse_ML.ipynb</code> (متنفذ وفيه كل النتايج). لو مفيش Jupyter على الجهاز افتحوا <code>EnergyPulse_ML.html</code> في المتصفح.</li>
+  <li><b>الـ UI:</b> <code>ui/design/EnergyPulse_UI_Design.pdf</code> للعرض، و <code>ui/index.html</code> لو عايزين تدوسوا في الـ prototype، و <code>ui/states.html</code> فيها لينك لكل شاشة وكل حالة.</li>
+</ul>
+
+<h2>المشروع في 3 جمل</h2>
+<p>المستخدم بيرفع قراءات عداد الكهربا كـ CSV. الموديل بيتوقع استهلاك كل ساعة في الـ 24 ساعة الجاية (<span class="en">day-ahead forecast</span>). أي قراءة بعيدة عن المتوقع بتطلع كـ alert فيه الفرق بالـ kWh وتكلفته، والمستخدم يقرر هي <span class="en">Expected</span> ولا محتاجة <span class="en">Investigate</span>.</p>
+
+<h2>الـ pipeline بالترتيب</h2>
+<table>
+  <tr><th>الخطوة</th><th>الملف</th><th>بيعمل إيه</th></tr>
+  <tr><td>1</td><td><code>prepare_data.py</code></td><td>يقرا الملف الخام، يصلح الـ daylight saving، يحول لـ hourly kWh، ويختار العدادات</td></tr>
+  <tr><td>2</td><td><code>features.py</code></td><td>الـ features (lags, rolling, calendar)، الـ scaling، والـ chronological split</td></tr>
+  <tr><td>3</td><td><code>train_forecast.py</code></td><td>الـ baselines و Random Forest و XGBoost، الـ tuning على validation، والتقييم على test</td></tr>
+  <tr><td>4</td><td><code>anomaly.py</code></td><td>الـ residual thresholds و Isolation Forest والـ alerts</td></tr>
+  <tr><td>5</td><td><code>export_ui_data.py</code></td><td>يطلع output الموديل الحقيقي للـ UI</td></tr>
+</table>
+<p>كل الإعدادات (التواريخ، الـ lags، الـ threshold) في ملف واحد: <code>config.py</code>.</p>
+
+<h2>البند 1: Dataset quality and justification</h2>
+<ul>
+  <li>الداتا: <span class="en">UCI ElectricityLoadDiagrams20112014</span>. قراءات حقيقية لـ 370 عداد في البرتغال، قراءة كل 15 دقيقة، من 2011 لـ 2014 (140,256 صف).</li>
+  <li>القيم بالـ kW كل ربع ساعة، فالـ kWh = القيمة ÷ 4، وجمعنا كل 4 قراءات عشان نطلع kWh في الساعة.</li>
+  <li>مفيش missing values في الملف، ومفيش labels بتقول أنهي قراءة عطل.</li>
+</ul>
+<div class="q"><b>ليه اخترتوا الداتا دي؟</b><p>حقيقية ومن مصدر عام معروف (مش generated)، وشكلها نفس شكل اللي المستخدم هيرفعه (تاريخ قراءات عداد)، و4 سنين بتغطي كل الأنماط: ليل ونهار، أيام الأسبوع، الفصول، والإجازات. وفيها عدادات صغيرة وكبيرة نختبر عليها.</p></div>
+<div class="q"><b>ليه شيلتوا سنة 2011؟</b><p>في 2011، 211 عداد من الـ 370 أكتر من نص قراءاتهم أصفار (210 منهم كلهم أصفار) لأنهم اتركبوا بعد كده. فاشتغلنا على 2012 لـ 2014، الفترة اللي العدادات كلها شغالة فيها.</p></div>
+<div class="q"><b>ليه 20 عداد بس؟</b><p>أول حاجة فلترنا: العداد لازم أصفاره ما تزيدش عن 0.5% ومفيهوش انقطاع أطول من 3 ساعات. فضل 273 عداد صالح. منهم اخترنا 20 للتدريب بطريقة <span class="en">stratified</span>: قسمناهم 20 شريحة حسب متوسط الاستهلاك وسحبنا واحد من كل شريحة بـ <code>seed = 42</code>، فعندنا من 6 kWh في الساعة لحد 2,500. و10 عدادات تانية الموديل ما شافهاش خالص (<span class="en">unseen</span>) عشان نختبر التعميم.</p></div>
+<div class="q"><b>إيه موضوع الـ daylight saving؟</b><p>الملف بتوقيت البرتغال. آخر حد في مارس الساعة من 1 لـ 2 مش موجودة أصلاً والملف حاطط مكانها أصفار في أغلب العدادات، فاعتبرناها missing وملّيناها من نفس الساعة في اليوم اللي قبله. وآخر حد في أكتوبر الساعة دي بتتكرر مرتين والملف جامعهم، فقسمناها على 2. ده مكتوب في وصف الداتا على UCI واتأكدنا منه في الملف.</p></div>
+
+<h2>البند 2: Preprocessing من غير data leakage</h2>
+<p><b>الـ leakage</b> معناه إن الموديل وهو بيتدرب يشوف معلومة من المستقبل أو من الـ test. عندنا قاعدة واحدة: <b>عشان نتوقع الساعة t، مسموح نستخدم بيانات عمرها 24 ساعة أو أكتر بس.</b></p>
+<ul>
+  <li>الـ lags كلها ≥ 24: <code>lag_24, lag_48, lag_72, lag_168, lag_336</code>.</li>
+  <li>الـ rolling statistics بتتحسب على series معمول لها <code>shift(24)</code>، يعني أحدث قيمة جواها هي y(t−24).</li>
+  <li><code>same_hour_mean_4w</code>: متوسط نفس الساعة في آخر 4 أسابيع.</li>
+  <li>الـ calendar features (<code>hour, dayofweek, is_weekend, month, is_holiday</code>) معروفة مقدماً فمفيهاش leakage.</li>
+  <li><b>الـ scaling:</b> مفيش <span class="en">StandardScaler</span> على الداتا كلها. كل صف بيتقسم على متوسط استهلاك نفس العداد في آخر أسبوع مسموح (من t−191 لـ t−24). فالـ scale نفسه من الماضي بس.</li>
+  <li><b>الـ split زمني ومن غير shuffle:</b> train من يناير 2012 ليونيو 2013 (249,120 صف)، validation من يوليو لديسمبر 2013 (88,320)، test سنة 2014 كلها (175,200).</li>
+  <li>الـ tuning والـ early stopping على validation بس. الـ test اتشاف مرة واحدة في الآخر.</li>
+</ul>
+<div class="q"><b>إزاي متأكدين إن مفيش leakage؟</b><p>في الـ notebook (قسم 3.1) اختبار أوتوماتيك: أخدنا 200 ساعة عشوائية، وبوّظنا كل القراءات اللي بعد t−24، وحسبنا الـ features تاني. ولا feature اتغيرت. لو فيه feature بتبص على بيانات حديثة كانت هتتغير.</p></div>
+<div class="q"><b>ليه بتتوقعوا قبلها بـ 24 ساعة مش بساعة؟</b><p>سببين: ده اللي الـ dashboard بيعرضه (توقع الـ 24 ساعة الجاية)، وكمان عشان الـ anomaly detection. لو الموديل شايف آخر ساعة، أول ما يحصل spike هيرفع المتوقع للساعة اللي بعدها ويخبي مشكلة مستمرة.</p></div>
+<div class="q"><b>ليه موديل واحد لكل العدادات؟</b><p>بعد القسمة على الـ scale كل العدادات بقت حوالين 1.0، فموديل واحد يتعلم من الـ 20 عداد مع بعض (داتا أكتر) ويقدر يشتغل على عداد جديد يرفعه المستخدم.</p></div>
+
+<h2>البند 3: Model choice والـ baseline</h2>
+<table>
+  <tr><th>الموديل</th><th>هو إيه</th></tr>
+  <tr><td><span class="en">Seasonal Naive (weekly)</span></td><td>نفس الساعة الأسبوع اللي فات: ŷ(t) = y(t−168). ده الـ baseline اللي في الـ proposal.</td></tr>
+  <tr><td><span class="en">Seasonal Naive (daily)</span></td><td>نفس الساعة امبارح: ŷ(t) = y(t−24). طلع أقوى من الأسبوعي فضفناه عشان المقارنة تبقى عادلة.</td></tr>
+  <tr><td><span class="en">Random Forest</span></td><td>100 شجرة، <code>min_samples_leaf = 20</code>، <code>max_features = 0.5</code></td></tr>
+  <tr><td><span class="en">XGBoost</span></td><td><code>max_depth = 8</code>، <code>min_child_weight = 20</code>، <code>learning_rate = 0.03</code>، 188 شجرة (من الـ early stopping)</td></tr>
+</table>
+<div class="q"><b>ليه XGBoost هو المختار مع إن Random Forest أحسن شوية على الـ test؟</b><p>الاختيار بيتم على الـ validation بس، وهناك XGBoost كان أحسن (7.97% قصاد 8.02%). على الـ test الاتنين متعادلين عملياً (7.91% و7.85%). لو غيرنا الاختيار بناءً على الـ test يبقى استخدمنا الـ test في القرار وده غلط. وكمان ملف XGBoost 3.5 MB وسريع في التشغيل.</p></div>
+<div class="q"><b>ليه مش LSTM أو ARIMA؟</b><p>الـ features عندنا جدول (lags وcalendar)، والـ tree models قوية جداً على النوع ده، بتتدرب في دقايق، وسهل نشرح هي معتمدة على إيه. وده اللي كان محدد في الـ proposal.</p></div>
+
+<h2>البند 4: Evaluation metrics والتفسير</h2>
+<ul>
+  <li><b>MAE</b> (بالـ kWh): متوسط حجم الخطأ.</li>
+  <li><b>RMSE</b> (بالـ kWh): زي MAE بس بيعاقب الأخطاء الكبيرة أكتر، ودي المهمة عندنا لأنها اللي بتعمل false alerts.</li>
+  <li><b>WAPE</b> (%): مجموع الأخطاء ÷ مجموع الاستهلاك. بيخلينا نقارن عداد 6 kWh بعداد 2,500 kWh. ما استخدمناش MAPE لأنه بينفجر لما قراءة تقرب من الصفر.</li>
+</ul>
+<table>
+  <tr><th>متوسط WAPE</th><th>Validation</th><th>Test 2014 (20 عداد)</th><th>Test 2014 (10 unseen)</th></tr>
+  <tr><td><span class="en">Naive weekly</span></td><td class="n">12.02%</td><td class="n">11.52%</td><td class="n">13.64%</td></tr>
+  <tr><td><span class="en">Naive daily</span></td><td class="n">8.88%</td><td class="n">9.31%</td><td class="n">14.21%</td></tr>
+  <tr><td><span class="en">Random Forest</span></td><td class="n">8.02%</td><td class="n">7.85%</td><td class="n">13.39%</td></tr>
+  <tr><td><b><span class="en">XGBoost</span></b></td><td class="n"><b>7.97%</b></td><td class="n"><b>7.91%</b></td><td class="n">13.84%</td></tr>
+</table>
+<p><b>نقرا الأرقام إزاي:</b></p>
+<ul>
+  <li>XGBoost أحسن من الـ baselines الاتنين في <b>20 عداد من 20</b> على MAE و RMSE و WAPE.</li>
+  <li>قصاد أقوى baseline (اليومي): MAE أقل 16.7% و RMSE أقل 22.1%. قصاد الأسبوعي: 27.1% و29.1%.</li>
+  <li>التحسن في RMSE أكبر من MAE، يعني الموديل بيشيل الأخطاء الكبيرة بالذات.</li>
+  <li>الـ validation والـ test قريبين من بعض (7.97% و7.91%)، يعني مفيش overfitting على فترة الـ tuning.</li>
+  <li>الـ feature importance: <code>lag_24</code> واخد 64%، وبعده <code>same_hour_mean_4w</code> بـ 15%. يعني الموديل بيبدأ من "نفس الساعة امبارح" ويصلحها بالباقي.</li>
+</ul>
+<div class="warn"><b>نقطة لازم تتقال بصراحة:</b> على الـ 10 عدادات اللي الموديل ما شافهاش، XGBoost كسب الـ baselines في 6 من 10 بس، والمتوسط (13.84%) مش أحسن من الأسبوعي (13.64%). السبب عدادين غير منتظمين جداً (<span class="en">MT_094</span> خطأه 58% و <span class="en">MT_368</span> 33%) بيشدوا المتوسط. الـ median بيقول القصة العادية: 5.58% قصاد 6.38%. ده مكتوب في الـ notebook، ولو الدكتورة سألت قولوه زي ما هو.</div>
+
+<h2>الـ Anomaly detection</h2>
+<h3>الطريقة A: forecast-residual thresholds (طريقتنا)</h3>
+<ol>
+  <li><code>residual = (actual − expected) ÷ scale</code></li>
+  <li>من الـ validation بنتعلم لكل عداد ولكل ساعة في اليوم الـ residual الطبيعي: الـ median والـ MAD. فساعات الليل ليها تسامح وساعات الشغل ليها تسامح تاني. ده معنى <span class="en">context-aware</span>.</li>
+  <li><code>z = 0.6745 × (residual − median) ÷ MAD</code>، ولو <code>|z| &gt; 3.5</code> الساعة بتتعلّم. (ده الـ modified z-score بتاع Iglewicz &amp; Hoaglin.)</li>
+  <li>الساعات المتعلّمة اللي جنب بعض بتتجمع في alert واحد، ونحسب الـ excess kWh ونضربه في الـ tariff.</li>
+</ol>
+<div class="q"><b>ليه median و MAD مش mean و standard deviation؟</b><p>لأن الـ anomalies نفسها بتكبّر الـ standard deviation فتخبي بعضها. الـ median والـ MAD ما بيتأثروش بالقيم الشاذة.</p></div>
+<h3>الطريقة B: Isolation Forest (للمقارنة)</h3>
+<p>موديل unsupervised بياخد وصف للقراءة من غير الـ forecast (القراءة نفسها، وفرقها عن امبارح وعن الأسبوع اللي فات وعن المتوسط، والساعة). اتدرب على الـ train، وظبطنا حده على الـ validation عشان يعلّم نفس نسبة الساعات زي الطريقة A، فالمقارنة عادلة.</p>
+<h3>التقييم من غير labels</h3>
+<p>الداتا مفيهاش أعطال معروفة، فمش بنقول accuracy ولا precision. بنقول:</p>
+<ul>
+  <li>نسبة الساعات المتعلّمة: 2.96% في الـ validation و3.09% في الـ test. يعني الـ thresholds ثابتة على سنة جديدة.</li>
+  <li>2,170 alert في 2014 على 20 عداد، حوالي 9 في الشهر لكل عداد (1,383 فوق المتوقع و787 تحته).</li>
+  <li>الطريقتين متفقين على 24.7% بس من الساعات، لأن كل واحدة بتدور على حاجة مختلفة.</li>
+  <li>10.5% من الساعات المتعلّمة في إجازات رسمية، مع إن الإجازات 2.5% بس من السنة. ده دليل إن الـ false alerts مش صفر، وهو السبب إن فيه خطوة مراجعة بشرية.</li>
+</ul>
+<h3>الـ injection test</h3>
+<p>عشان مفيش labels، عملنا حالة الإجابة فيها معروفة: أخدنا قراءات 2014 الحقيقية وضربنا 3 ساعات ورا بعض في 1.2 أو 1.4 أو 1.7 أو 2.0، في 30 مكان عشوائي لكل عداد (600 حدث لكل حجم)، وشفنا كل طريقة مسكت كام.</p>
+<table>
+  <tr><th>حجم الـ spike</th><th>طريقتنا مسكت</th><th>Isolation Forest</th></tr>
+  <tr><td class="n">+20%</td><td class="n">57%</td><td class="n">30%</td></tr>
+  <tr><td class="n">+40%</td><td class="n">87%</td><td class="n">70%</td></tr>
+  <tr><td class="n">+70%</td><td class="n">96.5%</td><td class="n">89.5%</td></tr>
+  <tr><td class="n">+100%</td><td class="n">98.7%</td><td class="n">94.5%</td></tr>
+</table>
+<div class="q"><b>مش ده synthetic data وهي ممنوعة؟</b><p>لأ. الداتا اللي الموديل اتدرب عليها 100% حقيقية. الـ spikes دي طريقة تقييم بس: اتضافت بعد ما الموديل والـ thresholds اتقفلوا، ومفيش أي حاجة اتدربت عليها. ولو الدكتورة مش عايزاها، القسم 11 في الـ notebook يتشال ومفيش أي رقم تاني بيتأثر.</p></div>
+
+<h2>حدود الشغل (قولوها قبل ما تتسألوا)</h2>
+<ul>
+  <li>مفيش anomaly labels، فالـ alert معناه "انحراف يستاهل مراجعة" مش "عطل مؤكد".</li>
+  <li>مفيش weather data، وده أول feature المفروض يتضاف.</li>
+  <li>العدادات غير المنتظمة صعبة على كل الطرق، حتى الـ baselines.</li>
+  <li>الـ spikes الصغيرة (حوالي 20%) بتتمسك نص الوقت بس لأنها قريبة من خطأ الـ forecast العادي.</li>
+  <li>الإجازات بتطلع alerts كتير، والمستخدم بيعلّم عليها Expected.</li>
+</ul>
+
+<h2>الـ UI/UX: البنود الخمسة</h2>
+<p>الـ UI معمول بـ HTML و CSS و JavaScript عادي، <b>من غير Streamlit</b>. كل الـ charts والـ alerts والأرقام اللي عليه output حقيقي من الموديل على العداد <span class="en">MT_287</span>. مش متوصل بالموديل live ومش deployed، وده مطلوب التقييم الجاي.</p>
+<table>
+  <tr><th>البند</th><th>نوريه فين</th></tr>
+  <tr><td>Complete UI screens covering the main user flow</td><td>Add readings ثم Overview ثم Alerts ثم Alert review ثم Decision، ومعاهم Model report و Settings (صفحة 2 لـ 5 في الـ PDF)</td></tr>
+  <tr><td>Consistent and user-friendly design</td><td>نفس ألوان الـ proposal، وكل لون له معنى واحد: mint للمتوقع، أبيض للفعلي، amber للي بره الطبيعي، أحمر لأخطاء الإدخال بس (صفحة 9)</td></tr>
+  <tr><td>Responsive design planning</td><td>3 layouts: desktop من 1100px، tablet من 760 لـ 1099، وموبايل تحت 760 بـ bottom bar (صفحة 8)</td></tr>
+  <tr><td>Clear input and results presentation</td><td>شاشة الرفع بتقول الملف محتاج إيه قبل الاختيار وبتعرض ملخصه بعده. والنتايج بوحدات المستخدم: kWh وفلوس (صفحة 3 و4)</td></tr>
+  <tr><td>Planned input validation and error states</td><td>جدول بكل rule ورسالتها، وحالات empty و loading و failure (صفحة 6 و7)</td></tr>
+</table>
+<div class="q"><b>الـ validation دي شغالة ولا رسمة؟</b><p>فحص ملف الـ CSV شغال فعلاً في المتصفح: جربوا ترفعوا ملف Excel أو ملف ناقص عمود. الرفع نفسه للسيرفر هو اللي لسه simulated.</p></div>
+<div class="q"><b>الـ proposal كان بيقول React، ليه ده مش React؟</b><p>التقييم ده على الـ design والـ screens، فعملناه prototype من غير build عشان يفتح على أي جهاز. نفس الشاشات والـ CSS هتتنقل React في التقييم الجاي مع الربط بالـ API.</p></div>
+
+</body>
+</html>

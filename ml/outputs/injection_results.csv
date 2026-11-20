@@ -1,0 +1,5 @@
+magnitude_pct,events,recall_residual,recall_iforest,alert_rate_other_hours_residual,alert_rate_other_hours_iforest
+20,600,57.17,30.0,2.01,3.35
+40,600,87.17,69.83,1.98,3.68
+70,600,96.5,89.5,1.95,4.42
+100,600,98.67,94.5,1.93,4.76

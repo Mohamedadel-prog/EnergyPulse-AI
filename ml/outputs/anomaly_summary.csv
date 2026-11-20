@@ -1,0 +1,2 @@
+test_hours,val_alert_rate_residual_pct,test_alert_rate_residual_pct,test_alert_rate_iforest_pct,flagged_by_both_hours,jaccard_overlap_pct,alerts_events,alerts_per_meter_per_month,spike_alerts,drop_alerts,holiday_share_of_flagged_hours_pct,holiday_share_of_all_hours_pct,total_excess_kwh_spikes
+175200,2.96,3.086,3.252,2198,24.683,2170,9.042,1383,787,10.451,2.466,335087.334

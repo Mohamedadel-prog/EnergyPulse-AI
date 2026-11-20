@@ -1,0 +1,6 @@
+# raw UCI file (711 MB) and the full hourly table (80 MB) are rebuilt by ml/src/prepare_data.py
+LD2011_2014.txt
+ml/data/hourly_kwh_2012_2014.csv
+__pycache__/
+.ipynb_checkpoints/
+anaconda_projects/
