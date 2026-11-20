@@ -1,77 +1,64 @@
 # EnergyPulse AI
 
-Forecast the next 24 hours of electricity consumption for a meter, flag readings that are
-outside what was expected, and let a person review each alert.
+Forecast the electricity consumption of a meter for every hour, 24 hours in advance, flag hours that
+are far from the forecast, and let a person review each alert.
 
 This folder holds the work for **Evaluation 2: ML model + UI/UX design**.
 
 | Evaluation item | Where to look |
 |---|---|
-| Trained and evaluated model | `ml/notebooks/EnergyPulse_ML.ipynb` (already executed; `EnergyPulse_ML.html` opens in any browser) |
+| Data and preprocessing | `ml/notebooks/01_preprocessing.ipynb` |
+| Model training and evaluation | `ml/notebooks/02_model_training_evaluation.ipynb` |
 | UI screens | `ui/design/EnergyPulse_UI_Design.pdf`, `ui/screenshots/`, or open `ui/index.html` |
-| Explanation for the team (Arabic) | `docs/Team_Guide_AR.html` |
 
-## Results (test year 2014, never used for training or tuning)
+## Results (test year 2014, never used for training or for choosing settings)
 
-Day-ahead forecast, mean WAPE across meters (lower is better):
+20 meters, day-ahead forecast, average over the meters:
 
-| Method | 20 modelled meters | 10 unseen meters |
-|---|---|---|
-| Seasonal Naive, same hour last week (baseline) | 11.52 % | 13.64 % |
-| Seasonal Naive, same hour yesterday (baseline) | 9.31 % | 14.21 % |
-| Random Forest | 7.85 % | 13.39 % |
-| **XGBoost (selected on validation)** | **7.91 %** | 13.84 % |
+| Method | MAE (kWh) | RMSE (kWh) | WAPE |
+|---|---|---|---|
+| Baseline: same hour yesterday | 28.68 | 46.61 | 9.31 % |
+| **XGBoost** | **24.91** | **38.24** | **8.48 %** |
 
-XGBoost beats both baselines on 20 of 20 modelled meters (MAE, RMSE and WAPE). On unseen
-meters the gain is small and not on every meter; the notebook discusses this openly.
-
-Anomaly detection: forecast-residual thresholds flag 3.1 % of test hours (about 9 alerts per
-meter per month), compared with Isolation Forest. The dataset has no fault labels, so no
-"accuracy" is claimed.
+XGBoost is better than the baseline on 18 of the 20 meters.
+Alerts: an hour is flagged when the error is larger than 3 x the normal error of that meter
+(measured on the validation period). About 1 % of the hours in 2014 are flagged.
 
 ## Data
 
 UCI *ElectricityLoadDiagrams20112014*: 370 real meters in Portugal, one reading every
 15 minutes, 2011-2014. https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014
 
-No synthetic or AI-generated data is used for training.
+No synthetic or AI-generated data is used.
 
 ## Folder map
 
 ```
-ml/src/config.py           every setting of the experiment (dates, lags, thresholds)
-ml/src/prepare_data.py     step 1  raw file -> clean hourly kWh, meter selection
-ml/src/features.py         step 2  leak-free features, scaling, chronological split
-ml/src/train_forecast.py   step 3  baselines, Random Forest, XGBoost, tuning, test scores
-ml/src/anomaly.py          step 4  residual thresholds, Isolation Forest, alerts
-ml/src/export_ui_data.py   step 5  real model output for the UI screens
-ml/src/plots.py            figures used by the notebook
-ml/data/                   cleaned hourly data (small files only)
-ml/outputs/                metrics, predictions, alerts, figures, trained model
-ml/notebooks/              the notebook shown in the evaluation
-ui/                        the interface prototype (HTML, CSS, JavaScript; no Streamlit)
-docs/                      team guide
+ml/notebooks/01_preprocessing.ipynb              dataset, quality checks, cleaning, split, features, scaling
+ml/notebooks/02_model_training_evaluation.ipynb  baseline, XGBoost, evaluation, alerts
+ml/data/hourly_kwh_20_meters.csv                 clean hourly kWh of the 20 meters
+ml/data/features.csv.gz                          features ready for the model (output of notebook 1)
+ml/outputs/models/xgb_forecaster.json            the trained model
+ml/outputs/models/model_meta.json                features, scale per meter, alert thresholds
+ml/outputs/test_results_per_meter.csv            test WAPE per meter
+ml/outputs/flagged_hours_2014.csv                flagged hours in the test year
+ui/                                              the interface prototype (HTML, CSS, JavaScript; no Streamlit)
 ```
 
 ## Run it again
 
 ```
 pip install -r requirements.txt
-
-# the raw file LD2011_2014.txt must sit next to the EnergyPulse-AI folder
-python ml/src/prepare_data.py      # each step takes a few minutes
-python ml/src/train_forecast.py
-python ml/src/anomaly.py
-python ml/src/export_ui_data.py
-
-# notebook
-cd ml/notebooks
-jupyter notebook EnergyPulse_ML.ipynb
 ```
+
+1. Download `LD2011_2014.txt` from the UCI page and put it next to the `EnergyPulse-AI` folder.
+2. Open `ml/notebooks/01_preprocessing.ipynb` and run all cells (a few minutes).
+3. Open `ml/notebooks/02_model_training_evaluation.ipynb` and run all cells.
+
+Notebook 2 also runs without the raw file, because `ml/data/features.csv.gz` is already included.
 
 The UI needs no install: open `ui/index.html` in a browser.
 
 ## Next evaluation
 
-Serve `ml/outputs/models/xgb_forecaster.json` behind FastAPI, connect the UI to it through
-the ASP.NET Core API, and deploy with Docker.
+Serve `ml/outputs/models/xgb_forecaster.json` behind an API, connect the UI to it, and deploy.
