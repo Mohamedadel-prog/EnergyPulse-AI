@@ -89,11 +89,11 @@
 
   // ================================================================ Alerts list
   P.alerts = function () {
-    const head = `<header class="page-head"><div><h1>Alerts</h1><p class="sub">Readings outside the normal range in the last 60 days</p></div></header>`;
+    const head = `<header class="page-head"><div><h1>Alerts</h1><p class="sub">Readings outside the normal range ${D.alertWindow}</p></div></header>`;
     if (EP.state === "loading") return EP.shell("alerts", head + loadingBlock(6));
     if (EP.state === "error") return EP.shell("alerts", head + loadError("Alerts"));
     if (EP.state === "empty") {
-      return EP.shell("alerts", head + `<div class="panel empty"><h2>No alerts in the last 60 days</h2>
+      return EP.shell("alerts", head + `<div class="panel empty"><h2>No alerts ${D.alertWindow}</h2>
         <p>Consumption stayed inside the normal range for every hour. If you expected an alert, you can make detection more sensitive.</p>
         <div class="btn-row"><a class="btn" href="settings.html">Change sensitivity</a></div></div>`);
     }
@@ -159,13 +159,13 @@
     const back = `<a class="back" href="alerts.html">${EP.icon.back}Alerts</a>`;
     if (!a) {
       return EP.shell("alerts", back + `<div class="panel empty"><h2>This alert was not found</h2>
-        <p>It may be older than 60 days, or the link is incomplete.</p><div class="btn-row"><a class="btn" href="alerts.html">See all alerts</a></div></div>`);
+        <p>It may be older than the alerts kept here, or the link is incomplete.</p><div class="btn-row"><a class="btn" href="alerts.html">See all alerts</a></div></div>`);
     }
     if (EP.state === "saved" && a.status === "needs_review") a = Object.assign({}, a, { status: "investigate", note: "Night shift to check which equipment was left running." });
 
     const s = EP.settings(), st = EP.parse(a.start), en = EP.parse(a.end), up = a.direction === "spike";
     const why = up
-      ? `Consumption stayed above the normal range for this meter at ${a.hours === 1 ? "this hour" : "these hours"} for ${F.hours(a.hours)}. The normal range comes from how far the forecast usually misses at each hour of the day.`
+      ? `Consumption stayed above the normal range for this meter at ${a.hours === 1 ? "this hour" : "these hours"} for ${F.hours(a.hours)}. The normal range is the forecast plus or minus ${D.report.stdMultiplier} times the usual forecast error of this meter.`
       : `Consumption fell below the normal range for this meter at ${a.hours === 1 ? "this hour" : "these hours"} for ${F.hours(a.hours)}. A drop costs nothing extra, but it can point to equipment that stopped or a meter fault.`;
 
     function decisionBox() {
@@ -346,7 +346,7 @@
                 <li>One reading every 15 minutes or every hour</li>
                 <li>At least ${MIN_DAYS} days of readings, so the forecast can learn the weekly pattern</li>
               </ul>
-              <p class="small"><a href="sample/meter_MT_287_sample.csv" download>Download a sample file</a> to see the layout.</p>
+              <p class="small"><a href="sample/${D.sampleFile}" download>Download a sample file</a> to see the layout.</p>
             </section>
           </div>`;
       }
@@ -418,7 +418,7 @@
         ["dragenter", "dragover"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
         ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove("over"); }));
         drop.addEventListener("drop", (ev) => ev.dataTransfer.files[0] && read(ev.dataTransfer.files[0]));
-        $("#use-sample").addEventListener("click", () => take("meter_MT_287_sample.csv", D.sampleCsv.length, D.sampleCsv));
+        $("#use-sample").addEventListener("click", () => take(D.sampleFile, D.sampleCsv.length, D.sampleCsv));
       }
       const form = $("#confirm");
       if (form) form.addEventListener("submit", (ev) => {
@@ -443,7 +443,7 @@
     paint();
     // states for design review
     const st = EP.state;
-    if (st === "sample" || st === "ready" || st === "uploading" || st === "failed" || st === "done" || st === "field-errors") take("meter_MT_287_sample.csv", D.sampleCsv.length, D.sampleCsv);
+    if (st === "sample" || st === "ready" || st === "uploading" || st === "failed" || st === "done" || st === "field-errors") take(D.sampleFile, D.sampleCsv.length, D.sampleCsv);
     if (st === "errors") take("meter_export_march.csv", 14800, brokenSample());
     if (st === "wrongtype") take("meter_readings.xlsx", 48200, "");
     if (st === "missing-columns") take("export.csv", 5200, "date;value\n2014-06-19 07:00;120,5\n");
@@ -456,51 +456,48 @@
   // ================================================================ Model report
   P.model = function () {
     const R = D.report, s = EP.settings();
-    const best = Math.min(...R.thisMeter.map((r) => r.wape)), worst = Math.max(...R.thisMeter.map((r) => r.wape));
-    const xgb = R.thisMeter.find((r) => r.key === "xgb"), daily = R.thisMeter.find((r) => r.key === "naive_daily");
-    const rows = R.thisMeter.map((r) => `<tr class="${r.key === "xgb" ? "current" : ""}">
-        <td>${r.key === "xgb" ? "<strong>" + r.label + "</strong>" : r.label}</td>
-        <td class="num">${F.num(r.mae, 2)}</td><td class="num hide-sm">${F.num(r.rmse, 2)}</td><td class="num">${F.num(r.wape, 2)}%</td>
-        <td style="width:26%" class="hide-sm"><div class="bar"><i class="${r.wape === best || r.key === "xgb" ? "best" : ""}" style="width:${(r.wape / worst) * 100}%"></i></div></td></tr>`).join("");
-    const allRows = R.allMeters.map((r) => `<tr class="${r.key === "xgb" ? "current" : ""}"><td>${r.key === "xgb" ? "<strong>" + r.label + "</strong>" : r.label}</td>
-        <td class="num">${F.num(r.modelled, 2)}%</td><td class="num">${F.num(r.unseen, 2)}%</td></tr>`).join("");
-    const inj = R.injection.map((r) => `<tr><td>+${r.size}% for 3 hours</td><td class="num">${F.num(r.caught)}%</td><td class="num">${F.num(r.caughtIsolationForest)}%</td></tr>`).join("");
-    const gain = Math.round((1 - xgb.mae / daily.mae) * 100);
+    const row = (r, cols) => `<tr class="${r.key === "xgb" ? "current" : ""}"><td>${r.key === "xgb" ? "<strong>" + r.label + "</strong>" : r.label}</td>${cols(r)}</tr>`;
+    const worst = Math.max(...R.thisMeter.map((r) => r.wape));
+    const cells = (r) => `<td class="num">${F.num(r.mae, 2)}</td><td class="num hide-sm">${F.num(r.rmse, 2)}</td><td class="num">${F.num(r.wape, 2)}%</td>
+        <td style="width:24%" class="hide-sm"><div class="bar"><i class="${r.key === "xgb" ? "best" : ""}" style="width:${(r.wape / worst) * 100}%"></i></div></td>`;
+    const cellsAll = (r) => `<td class="num">${F.num(r.mae, 2)}</td><td class="num hide-sm">${F.num(r.rmse, 2)}</td><td class="num">${F.num(r.wape, 2)}%</td>`;
+    const xgb = R.thisMeter.find((r) => r.key === "xgb"), base = R.thisMeter.find((r) => r.key === "baseline");
+    const allX = R.allMeters.find((r) => r.key === "xgb"), allB = R.allMeters.find((r) => r.key === "baseline");
+    const gain = Math.round((1 - xgb.mae / base.mae) * 100);
+    const head = `<thead><tr><th>Method</th><th class="num">Average miss (MAE), kWh</th><th class="num hide-sm">RMSE, kWh</th><th class="num">Share of consumption (WAPE)</th>`;
 
-    EP.shell("model", `<header class="page-head"><div><h1>Model report</h1><p class="sub">How the forecast and the alerts were checked</p></div></header>
+    EP.shell("model", `<header class="page-head"><div><h1>Model report</h1><p class="sub">How accurate the forecast is, and how alerts are decided</p></div></header>
       <div class="status-wrap"><div>
         <p class="status-line ok">The forecast for ${esc(s.meterName)} misses by <b>${F.num(xgb.wape, 1)}%</b> on average.</p>
-        <p class="status-meta">That is ${F.num(xgb.mae, 1)} kWh per hour on a meter that uses about ${F.num(R.meanKwh)} kWh per hour, ${gain}% less error than repeating yesterday's reading. Measured on ${R.testPeriod}, a year the model never saw while it was trained (${R.trainedOn}).</p>
+        <p class="status-meta">That is ${F.num(xgb.mae, 1)} kWh per hour on a meter that uses about ${F.num(R.meanKwh)} kWh per hour, ${gain}% less error than repeating yesterday's reading. Measured on ${R.testPeriod}, a year the model never saw: it was trained on ${R.trainedOn} and its settings were chosen on ${R.settingsChosenOn}.</p>
       </div></div>
       <div class="stack">
-        <section class="panel" aria-labelledby="m1"><div class="panel-head"><h2 id="m1">This meter, day-ahead forecast</h2><span class="muted small">Lower is better</span></div>
-          <div class="table-wrap" style="padding:8px 8px 6px"><table class="data">
-            <thead><tr><th>Method</th><th class="num">Average miss (MAE), kWh</th><th class="num hide-sm">RMSE, kWh</th><th class="num">Share of consumption (WAPE)</th><th class="hide-sm"></th></tr></thead>
-            <tbody>${rows}</tbody></table></div>
-          <p class="muted small" style="padding:0 22px 18px;max-width:86ch">The first two rows are simple rules used as baselines. XGBoost is the model in use: it was chosen on 2013 data, before 2014 was looked at. Random Forest is within a rounding error of it.</p>
+        <section class="panel" aria-labelledby="m1"><div class="panel-head"><h2 id="m1">This meter, forecast one day ahead</h2><span class="muted small">Lower is better</span></div>
+          <div class="table-wrap" style="padding:8px 8px 6px"><table class="data">${head}<th class="hide-sm"></th></tr></thead>
+            <tbody>${R.thisMeter.map((r) => row(r, cells)).join("")}</tbody></table></div>
+          <p class="muted small" style="padding:0 22px 18px;max-width:86ch">The baseline is a simple rule: tomorrow at each hour will be the same as today at that hour. A model is only useful if it beats it.</p>
         </section>
-        <div class="grid-2 even">
-          <section class="panel" aria-labelledby="m2"><div class="panel-head"><h2 id="m2">All test meters</h2><span class="muted small">Average WAPE</span></div>
-            <div class="table-wrap" style="padding:8px 8px 6px"><table class="data">
-              <thead><tr><th>Method</th><th class="num">${R.metersModelled} meters used in training</th><th class="num">${R.metersUnseen} meters never seen</th></tr></thead>
-              <tbody>${allRows}</tbody></table></div>
-            <p class="muted small" style="padding:0 22px 18px">On meters the model has never seen, the gain over the simple rules is small and not on every meter. Irregular meters are hard for every method.</p>
+        <section class="panel" aria-labelledby="m2"><div class="panel-head"><h2 id="m2">All ${R.meters} meters</h2><span class="muted small">Average over the meters</span></div>
+            <div class="table-wrap" style="padding:8px 8px 6px"><table class="data">${head}</tr></thead>
+              <tbody>${R.allMeters.map((r) => row(r, cellsAll)).join("")}</tbody></table></div>
+            <p class="muted small" style="padding:0 22px 18px">XGBoost has a lower error than the baseline on ${R.wins} of the ${R.meters} meters (${F.num(allB.wape, 1)}% to ${F.num(allX.wape, 1)}% WAPE). The meters where it does not win are irregular and hard to predict for both.</p>
           </section>
-          <section class="panel" aria-labelledby="m3"><div class="panel-head"><h2 id="m3">Do the alerts catch real changes?</h2></div>
-            <div class="table-wrap" style="padding:8px 8px 6px"><table class="data">
-              <thead><tr><th>Test spike</th><th class="num">Caught by EnergyPulse</th><th class="num">Caught by Isolation Forest</th></tr></thead>
-              <tbody>${inj}</tbody></table></div>
-            <p class="muted small" style="padding:0 22px 18px">The dataset has no list of real faults, so known test spikes were added to 2014 readings after the model was frozen. Small spikes close to the normal forecast error are often missed.</p>
+          <section class="panel panel-pad stack" aria-labelledby="m3"><h2 id="m3">How an alert is decided</h2>
+            <dl class="detail-list">
+              <dt>Usual forecast error</dt><dd>${F.num(R.errorStdKwh, 1)} kWh per hour for this meter (standard deviation, measured on ${R.settingsChosenOn})</dd>
+              <dt>Alert when</dt><dd>the reading is more than ${R.stdMultiplier} &times; that, ${F.num(R.thresholdKwh)} kWh, away from the forecast</dd>
+              <dt>Hours flagged in 2014</dt><dd>${F.num(R.flaggedHoursPct, 1)}% across all meters, about ${F.num(R.flaggedHoursPerMeterMonth)} hours per meter a month</dd>
+              <dt>This meter in 2014</dt><dd>${R.alerts2014.total} alerts, about ${F.num(R.alerts2014.perMonth)} a month</dd>
+            </dl>
           </section>
-        </div>
-        ${EP.notice("info", "How to read an alert", `<p>An alert means a reading was outside the normal range for this meter at that hour. It is a reason to look, not proof of a fault. In 2014 this meter had ${R.alerts2014.total} alerts (about ${F.num(R.alerts2014.perMonth)} a month). Across all meters, ${F.num(R.holidayShareFlaggedPct)}% of flagged hours fell on public holidays, which are ${F.num(R.holidayShareAllPct, 1)}% of the year, so many alerts are expected events that you can dismiss in one step.</p>`)}
+        ${EP.notice("info", "How to read an alert", "<p>An alert means a reading was far from what this meter usually uses at that time. It is a reason to look, not proof of a fault: the dataset has no list of real faults, so the alerts cannot be scored for accuracy. Public holidays often trigger alerts, because the model does not know about them. You mark those as expected in one step.</p>")}
       </div>`);
   };
 
   // ================================================================ Settings
   P.settings = function () {
     const s = EP.settings(), levels = D.sensitivity.levels;
-    const explain = { "Fewer alerts": "Only large deviations", "Standard": "Recommended", "More alerts": "Also smaller deviations, more to review" };
+    const explain = { "Fewer alerts": "Only large deviations", "Standard": "Recommended, the rule used in the model report", "More alerts": "Also smaller deviations, more to review" };
     EP.shell("settings", `<header class="page-head"><div><h1>Settings</h1><p class="sub">Meter details, tariff and alert sensitivity</p></div></header>
       <form id="settings" novalidate style="max-width:640px" class="stack">
         <section class="panel panel-pad"><h2 style="margin-bottom:16px">Meter and tariff</h2>
@@ -545,11 +542,22 @@
 
   // ================================================================ Index of screens and states
   P.states = function () {
+    function alertStates() {
+      const all = D.alerts, open = all.find((a) => a.status === "needs_review") || all[0];
+      const out = [[`alert.html?id=${open.id}`, "Open alert"], [`alert.html?id=${open.id}&state=note-error`, "Note required"],
+        [`alert.html?id=${open.id}&state=saved`, "Decision saved"]];
+      const drop = all.find((a) => a.direction === "drop" && a.holiday) || all.find((a) => a.direction === "drop");
+      if (drop) out.push([`alert.html?id=${drop.id}`, drop.holiday ? "Below expected, public holiday" : "Below expected"]);
+      const decided = all.find((a) => a.status !== "needs_review");
+      if (decided) out.push([`alert.html?id=${decided.id}`, "Decision already recorded"]);
+      out.push(["alert.html?id=none", "Alert not found"]);
+      return out;
+    }
     const groups = [
       ["Overview", [["index.html", "With data"], ["index.html?state=empty", "First run, no readings"], ["index.html?state=loading", "Loading"], ["index.html?state=error", "Readings could not be loaded"]]],
       ["Add readings", [["upload.html", "Choose a file"], ["upload.html?state=ready", "File checked and ready"], ["upload.html?state=errors", "File with problems"], ["upload.html?state=wrongtype", "Wrong file type"], ["upload.html?state=missing-columns", "Columns missing"], ["upload.html?state=field-errors", "Form errors"], ["upload.html?state=uploading", "Uploading"], ["upload.html?state=failed", "Upload failed"], ["upload.html?state=done", "Done"]]],
       ["Alerts", [["alerts.html", "Needs review"], ["alerts.html?show=all", "All alerts"], ["alerts.html?show=investigate", "To investigate"], ["alerts.html?state=empty", "No alerts"], ["alerts.html?state=loading", "Loading"], ["alerts.html?state=error", "Alerts could not be loaded"]]],
-      ["Alert review", [["alert.html?id=A-0619-00", "Open alert"], ["alert.html?id=A-0619-00&state=note-error", "Note required"], ["alert.html?id=A-0619-00&state=saved", "Decision saved"], ["alert.html?id=A-0420-20", "Below expected, public holiday"], ["alert.html?id=none", "Alert not found"]]],
+      ["Alert review", alertStates()],
       ["Model report", [["model.html", "Results"]]],
       ["Settings", [["settings.html", "Form"], ["settings.html?state=errors", "Form errors"], ["settings.html?state=saved", "Saved"]]],
     ];

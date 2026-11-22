@@ -10,6 +10,7 @@ This folder holds the work for **Evaluation 2: ML model + UI/UX design**.
 | Data and preprocessing | `ml/notebooks/01_preprocessing.ipynb` |
 | Model training and evaluation | `ml/notebooks/02_model_training_evaluation.ipynb` |
 | UI screens | `ui/design/EnergyPulse_UI_Design.pdf`, `ui/screenshots/`, or open `ui/index.html` |
+| Team guide (Arabic): every step and likely questions | `docs/Team_Guide_AR.html` |
 
 ## Results (test year 2014, never used for training or for choosing settings)
 
@@ -17,12 +18,16 @@ This folder holds the work for **Evaluation 2: ML model + UI/UX design**.
 
 | Method | MAE (kWh) | RMSE (kWh) | WAPE |
 |---|---|---|---|
-| Baseline: same hour yesterday | 28.68 | 46.61 | 9.31 % |
-| **XGBoost** | **24.91** | **38.24** | **8.48 %** |
+| Baseline: same hour yesterday | 31.95 | 53.28 | 12.12 % |
+| **XGBoost** | **29.07** | **43.33** | **10.57 %** |
 
-XGBoost is better than the baseline on 18 of the 20 meters.
+XGBoost is better than the baseline on 16 of the 20 meters. Validation WAPE (10.61 %) and test WAPE
+(10.57 %) are the same, so the model does not overfit.
 Alerts: an hour is flagged when the error is larger than 3 x the normal error of that meter
-(measured on the validation period). About 1 % of the hours in 2014 are flagged.
+(measured on the validation period). About 1.4 % of the hours in 2014 are flagged.
+
+The 20 meters are chosen with the training period only (2012-01-01 to 2013-06-30), so no information
+from the validation or test period is used before the final evaluation.
 
 ## Data
 
@@ -42,6 +47,7 @@ ml/outputs/models/xgb_forecaster.json            the trained model
 ml/outputs/models/model_meta.json                features, scale per meter, alert thresholds
 ml/outputs/test_results_per_meter.csv            test WAPE per meter
 ml/outputs/flagged_hours_2014.csv                flagged hours in the test year
+ml/export_ui_data.py                             writes the model's output for the UI (ui/assets/data.js)
 ui/                                              the interface prototype (HTML, CSS, JavaScript; no Streamlit)
 ```
 
@@ -54,6 +60,7 @@ pip install -r requirements.txt
 1. Download `LD2011_2014.txt` from the UCI page and put it next to the `EnergyPulse-AI` folder.
 2. Open `ml/notebooks/01_preprocessing.ipynb` and run all cells (a few minutes).
 3. Open `ml/notebooks/02_model_training_evaluation.ipynb` and run all cells.
+4. Optional: `python ml/export_ui_data.py` refreshes the numbers shown in the UI.
 
 Notebook 2 also runs without the raw file, because `ml/data/features.csv.gz` is already included.
 
